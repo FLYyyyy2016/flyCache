@@ -2,7 +2,6 @@ package flyCache
 
 import (
 	"errors"
-	"github.com/cespare/xxhash"
 	"math/rand"
 	"strconv"
 	"sync"
@@ -12,11 +11,12 @@ import (
 
 	"github.com/VictoriaMetrics/fastcache"
 	"github.com/allegro/bigcache"
+	"github.com/cespare/xxhash"
 	"github.com/coocood/freecache"
 	"github.com/dgraph-io/ristretto"
 	"github.com/golang/groupcache/lru"
-	"github.com/magiconair/properties/assert"
 	"github.com/pingcap/go-ycsb/pkg/generator"
+	"github.com/stretchr/testify/assert"
 )
 
 type Cache interface {

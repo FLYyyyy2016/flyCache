@@ -1,4 +1,4 @@
-module liufei/flyCache
+module github.com/FLYyyyy2016/flyCache
 
 go 1.13
 
@@ -9,6 +9,6 @@ require (
 	github.com/coocood/freecache v1.1.0
 	github.com/dgraph-io/ristretto v0.0.1
 	github.com/golang/groupcache v0.0.0-20191227052852-215e87163ea7
-	github.com/magiconair/properties v1.8.0
 	github.com/pingcap/go-ycsb v0.0.0-20191211093030-8a7d5589faed
+	github.com/stretchr/testify v1.4.0
 )

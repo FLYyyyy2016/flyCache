@@ -5,7 +5,7 @@ import "fmt"
 type RingBuf struct {
 	data       []byte
 	writeIndex int
-	readIndex  int
+	aroundTime int
 	size       int
 }
 
@@ -15,10 +15,8 @@ func (r *RingBuf) String() string {
 
 func New(size int) *RingBuf {
 	return &RingBuf{
-		data:       make([]byte, size),
-		writeIndex: 0,
-		readIndex:  0,
-		size:       size,
+		data: make([]byte, size),
+		size: size,
 	}
 }
 
@@ -26,22 +24,25 @@ func (r *RingBuf) GetSize() int {
 	return r.size
 }
 
-func (r *RingBuf) Write(data []byte) {
-	if len(data) > r.size {
-		r.writeIndex = (r.writeIndex + len(data)) % r.size
-		copy(r.data[r.writeIndex:], data[len(data)-r.size:])
-		copy(r.data[:r.writeIndex], data[len(data)-r.writeIndex:])
+func (r *RingBuf) GetAroundTime() int {
+	return r.aroundTime
+}
 
+func (r *RingBuf) Write(data []byte) {
+	index := r.writeIndex % r.size
+	if len(data) > r.size {
+		index := (r.writeIndex + len(data)) % r.size
+		copy(r.data[index:], data[len(data)-r.size:])
+		copy(r.data[:index], data[len(data)-index:])
 	} else {
-		if r.writeIndex+len(data) < r.size {
-			r.writeIndex += copy(r.data[r.writeIndex:], data)
+		if index+len(data) < r.size {
+			copy(r.data[index:], data)
 		} else {
-			length := copy(r.data[r.writeIndex:], data)
-			r.writeIndex += copy(r.data[:], data[length:])
-			r.writeIndex += length
-			r.writeIndex %= r.size
+			length := copy(r.data[index:], data)
+			copy(r.data[:], data[length:])
 		}
 	}
+	r.writeIndex += len(data)
 
 }
 
@@ -81,5 +82,10 @@ func (r *RingBuf) ReadAt(data []byte, index int) {
 }
 
 func (r *RingBuf) ReadAll() []byte {
-	return append(r.data[r.writeIndex:], r.data[:r.writeIndex]...)
+	index := r.writeIndex % r.size
+	return append(r.data[index:], r.data[:index]...)
+}
+
+func (r *RingBuf) WriteIndex() int {
+	return r.writeIndex
 }

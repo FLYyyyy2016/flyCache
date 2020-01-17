@@ -1,4 +1,4 @@
-package flyCache
+package bench
 
 import (
 	"errors"

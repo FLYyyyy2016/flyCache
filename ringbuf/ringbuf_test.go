@@ -35,7 +35,7 @@ func TestRingBuf_WriteRead(t *testing.T) {
 	assert.Equal(t, []byte("34512"), data)
 	assert.Equal(t, []byte("34512"), dataOver[:rb.GetSize()])
 	assert.Equal(t, []byte("12345"), rb.ReadAll())
-	assert.Equal(t, 3, rb.writeIndex)
+	assert.Equal(t, 8, rb.writeIndex)
 
 	// then
 	rb.WriteAt([]byte("54321"), 2)
@@ -44,14 +44,14 @@ func TestRingBuf_WriteRead(t *testing.T) {
 	// when
 	assert.Equal(t, []byte("43215"), rb.ReadAll())
 	assert.Equal(t, []byte("21543"), data)
-	assert.Equal(t, 3, rb.writeIndex)
+	assert.Equal(t, 8, rb.writeIndex)
 
 	// then
 	rb.Write([]byte("123456789"))
 	rb.ReadAt(data, 0)
 
 	// when
-	assert.Equal(t, 2, rb.writeIndex)
+	assert.Equal(t, 17, rb.writeIndex)
 	assert.Equal(t, []byte("56789"), rb.ReadAll())
 	assert.Equal(t, []byte("89567"), data)
 
@@ -60,7 +60,7 @@ func TestRingBuf_WriteRead(t *testing.T) {
 	rb.ReadAt(data, 0)
 
 	// when
-	assert.Equal(t, 2, rb.writeIndex)
+	assert.Equal(t, 17, rb.writeIndex)
 	assert.Equal(t, []byte("95678"), rb.ReadAll())
 	assert.Equal(t, []byte("78956"), data)
 

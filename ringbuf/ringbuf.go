@@ -1,12 +1,16 @@
 package ringbuf
 
-import "fmt"
+import (
+	"fmt"
+	"sync"
+)
 
 type RingBuf struct {
 	data       []byte
 	writeIndex int
 	aroundTime int
 	size       int
+	sync.RWMutex
 }
 
 func (r *RingBuf) String() string {

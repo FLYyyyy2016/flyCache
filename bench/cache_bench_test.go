@@ -9,6 +9,8 @@ import (
 	"testing"
 	"time"
 
+	"github.com/FLYyyyy2016/flyCache"
+
 	"github.com/VictoriaMetrics/fastcache"
 	"github.com/allegro/bigcache"
 	"github.com/cespare/xxhash"
@@ -16,7 +18,6 @@ import (
 	"github.com/dgraph-io/ristretto"
 	"github.com/golang/groupcache/lru"
 	"github.com/pingcap/go-ycsb/pkg/generator"
-	"github.com/stretchr/testify/assert"
 )
 
 type Cache interface {
@@ -32,7 +33,7 @@ const (
 	// workloadSize is the size of array storing sequence of keys that we
 	// have in our workload. In the benchmark, we iterate over this array b.N
 	// number of times in circular fashion starting at a random position.
-	workloadSize = 2 << 20
+	workloadSize = 2 << 10
 )
 
 var (
@@ -326,13 +327,29 @@ func newRistretto(keysInWindow int) *RistrettoCache {
 }
 
 //========================================================================
+//                         flyCache
+//========================================================================
+
+type FlyCache struct {
+	c *flyCache.Cache
+}
+
+func (f FlyCache) Get(key []byte) ([]byte, error) {
+	return f.c.Get(key)
+}
+
+func (f FlyCache) Set(key []byte, value []byte) error {
+	return f.c.Set(key, value)
+}
+
+func newFlyCache(keysInWindow int) *FlyCache {
+	size := keysInWindow * maxKeyLength
+	return &FlyCache{c: flyCache.NewCache(size)}
+}
+
+//========================================================================
 //                         Benchmark Code
 //========================================================================
-func TestGetZipList(t *testing.T) {
-	zipfList := ZipfKeyList()
-	oneList := OneKeyList()
-	assert.Equal(t, len(zipfList), len(oneList))
-}
 
 func runCacheBenchmark(b *testing.B, cache Cache, keys [][]byte, pctWrites uint64) {
 	b.ReportAllocs()
@@ -384,6 +401,7 @@ func BenchmarkCaches(b *testing.B) {
 		{"GroupCacheZipfRead", newGroupCache(b.N), zipfList, 0},
 		{"RistrettoZipfRead", newRistretto(b.N), zipfList, 0},
 		{"SyncMapZipfRead", newSyncMap(), zipfList, 0},
+		{"FlyMapZipfRead", newFlyCache(b.N), zipfList, 0},
 
 		{"BigCacheOneKeyRead", newBigCache(b.N), oneList, 0},
 		{"FastCacheOneKeyRead", newFastCache(b.N), oneList, 0},
@@ -391,13 +409,7 @@ func BenchmarkCaches(b *testing.B) {
 		{"GroupCacheOneKeyRead", newGroupCache(b.N), oneList, 0},
 		{"RistrettoOneKeyRead", newRistretto(b.N), oneList, 0},
 		{"SyncMapOneKeyRead", newSyncMap(), oneList, 0},
-
-		{"BigCacheZipfWrite", newBigCache(b.N), zipfList, 100},
-		{"FastCacheZipfWrite", newFastCache(b.N), zipfList, 100},
-		{"FreeCacheZipfWrite", newFreeCache(b.N), zipfList, 100},
-		{"GroupCacheZipfWrite", newGroupCache(b.N), zipfList, 100},
-		{"RistrettoZipfWrite", newRistretto(b.N), zipfList, 100},
-		{"SyncMapZipfWrite", newSyncMap(), zipfList, 100},
+		{"FlyMapOneKeyRead", newFlyCache(b.N), oneList, 0},
 
 		{"BigCacheOneKeyWrite", newBigCache(b.N), oneList, 100},
 		{"FastCacheOneKeyWrite", newFastCache(b.N), oneList, 100},
@@ -405,6 +417,23 @@ func BenchmarkCaches(b *testing.B) {
 		{"GroupCacheOneKeyWrite", newGroupCache(b.N), oneList, 100},
 		{"RistrettoOneKeyWrite", newRistretto(b.N), oneList, 100},
 		{"SyncMapOneKeyWrite", newSyncMap(), oneList, 100},
+		{"FlyMapOneKeyWrite", newFlyCache(b.N), oneList, 100},
+
+		{"BigCacheZipfWrite", newBigCache(b.N), zipfList, 100},
+		{"FastCacheZipfWrite", newFastCache(b.N), zipfList, 100},
+		{"FreeCacheZipfWrite", newFreeCache(b.N), zipfList, 100},
+		{"GroupCacheZipfWrite", newGroupCache(b.N), zipfList, 100},
+		{"RistrettoZipfWrite", newRistretto(b.N), zipfList, 100},
+		{"SyncMapZipfWrite", newSyncMap(), zipfList, 100},
+		{"FlyMapZipfWrite", newFlyCache(b.N), zipfList, 100},
+
+		{"BigCacheOneKeyWrite", newBigCache(b.N), oneList, 100},
+		{"FastCacheOneKeyWrite", newFastCache(b.N), oneList, 100},
+		{"FreeCacheOneKeyWrite", newFreeCache(b.N), oneList, 100},
+		{"GroupCacheOneKeyWrite", newGroupCache(b.N), oneList, 100},
+		{"RistrettoOneKeyWrite", newRistretto(b.N), oneList, 100},
+		{"SyncMapOneKeyWrite", newSyncMap(), oneList, 100},
+		{"FlyMapOneKeyWrite", newFlyCache(b.N), zipfList, 100},
 
 		{"BigCacheZipfMixed", newBigCache(b.N), zipfList, 25},
 		{"FastCacheZipfMixed", newFastCache(b.N), zipfList, 25},
@@ -412,6 +441,7 @@ func BenchmarkCaches(b *testing.B) {
 		{"GroupCacheZipfMixed", newGroupCache(b.N), zipfList, 25},
 		{"RistrettoZipfMixed", newRistretto(b.N), zipfList, 25},
 		{"SyncMapZipfMixed", newSyncMap(), zipfList, 25},
+		{"FlyMapZipfMixed", newFlyCache(b.N), zipfList, 25},
 
 		{"BigCacheOneKeyMixed", newBigCache(b.N), oneList, 25},
 		{"FastCacheOneKeyMixed", newFastCache(b.N), oneList, 25},
@@ -419,6 +449,7 @@ func BenchmarkCaches(b *testing.B) {
 		{"GroupCacheOneKeyMixed", newGroupCache(b.N), oneList, 25},
 		{"RistrettoOneKeyMixed", newRistretto(b.N), oneList, 25},
 		{"SyncMapOneKeyMixed", newSyncMap(), oneList, 25},
+		{"FlyMapOneKeyMixed", newFlyCache(b.N), zipfList, 25},
 	}
 
 	for _, bm := range benchmarks {
